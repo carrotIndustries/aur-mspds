@@ -1,0 +1,94 @@
+diff -rupN /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/FetControl.h ./DLL430_v3/src/TI/DLL430/FetControl.h
+--- /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/FetControl.h	2016-05-13 01:07:10.938001257 +0200
++++ ./DLL430_v3/src/TI/DLL430/FetControl.h	2016-05-12 23:05:30.036671417 +0200
+@@ -36,6 +36,7 @@
+  */
+ 
+ #pragma once
++#include <mutex>
+ 
+ #include "PortInfo.h"
+ #include "WatchdogControl.h"
+diff -rupN /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/HidUpdateManager.cpp ./DLL430_v3/src/TI/DLL430/HidUpdateManager.cpp
+--- /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/HidUpdateManager.cpp	2016-05-13 01:07:10.968001299 +0200
++++ ./DLL430_v3/src/TI/DLL430/HidUpdateManager.cpp	2016-05-12 23:02:43.266320477 +0200
+@@ -38,7 +38,7 @@
+ #include <pch.h>
+ #include "HidUpdateManager.h"
+ 
+-#include <hidapi.h>
++#include <hidapi/hidapi.h>
+ 
+ #include <BSL430_DLL/Connections/MSPBSL_Connection5xxUSB.h>
+ #include <BSL430_DLL/MSPBSL_Factory.h>
+diff -rupN /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/SyncedCallWrapper.h ./DLL430_v3/src/TI/DLL430/SyncedCallWrapper.h
+--- /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/SyncedCallWrapper.h	2016-05-13 01:07:10.908001216 +0200
++++ ./DLL430_v3/src/TI/DLL430/SyncedCallWrapper.h	2016-05-12 23:04:58.287938653 +0200
+@@ -36,7 +36,7 @@
+  */
+ 
+ #pragma once
+-
++#include <mutex>
+ 
+ template<class T>
+ class SyncedCallWrapper
+diff -rupN /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/UsbCdcIoChannel.cpp ./DLL430_v3/src/TI/DLL430/UsbCdcIoChannel.cpp
+--- /tmp/fixme/slac460/DLL430_v3/src/TI/DLL430/UsbCdcIoChannel.cpp	2016-05-13 01:07:10.954667948 +0200
++++ ./DLL430_v3/src/TI/DLL430/UsbCdcIoChannel.cpp	2016-05-12 23:06:16.038127948 +0200
+@@ -317,10 +317,10 @@ void UsbCdcIoChannel::createCdcPortList(
+ 				string modalias;
+ 				int interfaceNumber = -1;
+ 
+-				ifstream modAliasStream((it->path()/"device/modalias").string().c_str());
++                boost::filesystem::ifstream modAliasStream((it->path()/"device/modalias").string().c_str());
+ 				modAliasStream >> modalias;
+ 
+-				ifstream ifNumStream((it->path()/"device/bInterfaceNumber").string().c_str());
++                boost::filesystem::ifstream ifNumStream((it->path()/"device/bInterfaceNumber").string().c_str());
+ 				ifNumStream >> interfaceNumber;
+ 				if (modalias.find(cdcIdStream.str()) == 0 && interfaceNumber == 0)
+ 				{
+
+diff -rupN /tmp/fixme/slac460/Makefile ./Makefile
+--- /tmp/fixme/slac460/Makefile	2016-05-13 01:07:10.844667794 +0200
++++ ./Makefile	2016-05-13 00:43:20.560822498 +0200
+@@ -8,7 +8,7 @@ DEFINES := -DUNIX
+ ifdef DEBUG
+ CXXFLAGS += -g -O0
+ else
+-CXXFLAGS += -Os
++CXXFLAGS += -O3
+ DEFINES += -DNDEBUG
+ endif
+ 
+@@ -35,7 +35,7 @@ STATIC_LIBS :=
+ ifdef STATIC
+ STATIC_LIBS += -lboost_filesystem -lboost_system -lbsl430
+ else
+-LIBS += -lboost_filesystem -lboost_system -lbsl430
++LIBS += -lboost_filesystem -lboost_system -lbsl430 -lhidapi-libusb
+ endif
+ 
+ LIBTHIRD := ./ThirdParty/lib64
+@@ -128,7 +128,7 @@ SRC := \
+ OBJS := $(patsubst %.cpp, %.o, $(SRC))
+ 
+ all: $(BSLLIB) $(OBJS)
+-	$(CXX) $(CXXFLAGS) -shared $(OUTNAME)$(OUTPUT) -o $(OUTPUT) $(OBJS) $(HIDOBJ) $(LIBDIRS) $(BSTATIC) $(STATIC_LIBS) $(BDYNAMIC) $(LIBS)
++	$(CXX) $(CXXFLAGS) -shared $(OUTNAME)$(OUTPUT) -o $(OUTPUT) $(OBJS) $(LIBDIRS) $(BSTATIC) $(STATIC_LIBS) $(BDYNAMIC) $(LIBS)
+ 	rm -f $(STATICOUTPUT).a
+ 	ar -rs $(STATICOUTPUT).a $(OBJS)
+
+diff -rupN /tmp/fixme/slac460/ThirdParty/BSL430_DLL/BSL430_DLL/Physical_Interfaces/MSPBSL_PhysicalInterfaceUSB.h ./ThirdParty/BSL430_DLL/BSL430_DLL/Physical_Interfaces/MSPBSL_PhysicalInterfaceUSB.h
+--- /tmp/fixme/slac460/ThirdParty/BSL430_DLL/BSL430_DLL/Physical_Interfaces/MSPBSL_PhysicalInterfaceUSB.h	2016-05-13 01:07:10.878001175 +0200
++++ ./ThirdParty/BSL430_DLL/BSL430_DLL/Physical_Interfaces/MSPBSL_PhysicalInterfaceUSB.h	2016-05-12 23:02:43.266320477 +0200
+@@ -38,7 +38,7 @@
+ 
+ #pragma once
+ 
+-#include <hidapi.h>
++#include <hidapi/hidapi.h>
+ 
+ #include "MSPBSL_PhysicalInterface.h"
+ 
